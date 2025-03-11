@@ -18,7 +18,7 @@ public class AuthController extends HttpServlet
         Random rand = new Random();
         int luckyNumber = rand.nextInt(100);
         HttpSession session = req.getSession();
-        if (session.getAttribute("lucky_number") == null) { // 이 부분 lucky_number일때랑 luckyNumber일때 차이
+        if (session.getAttribute("lucky_number") == null) {
             session.setAttribute("lucky_number", luckyNumber);
         }
     req.getRequestDispatcher("/WEB-INF/auth.jsp").forward(req, resp);
