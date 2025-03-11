@@ -8,6 +8,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.example.ex11.model.GeminiResponse" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html>
@@ -54,29 +55,38 @@
 <%! ObjectMapper mapper = new ObjectMapper(); %>
 <%! String answer = ""; %>
 <%
-    Map<String, List<Map<String, List<Map<String, String>>>>> geminiMap = new HashMap<>();
-    List<Map<String, String>> parts = List.of(new HashMap<>());
-    parts.get(0).put("text", request.getParameter("prompt"));
-    List<Map<String, List<Map<String, String>>>> contents = List.of(new HashMap<>());
-    contents.get(0).put("parts", parts);
-    geminiMap.put("contents", contents);
-    HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=%s".formatted(
-                    dotenv.get("GEMINI_KEY")
-            )))
-            .POST(HttpRequest.BodyPublishers.ofString(
-                    mapper.writeValueAsString(geminiMap)))
-            .build();
-    try {
-        HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-        answer = httpResponse.body();
-    } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+    String prompt = request.getParameter("prompt");
+    if (prompt == null || prompt.isBlank()) {
+        prompt = "프롬프트가 없습니다";
+        answer = "프롬프트를 제대로 입력해주세요!";
+    } else {
+        prompt += " no markdown, under 300 character, use korean language, nutshell please";
+        Map<String, List<Map<String, List<Map<String, String>>>>> geminiMap = new HashMap<>();
+        List<Map<String, String>> parts = List.of(new HashMap<>());
+        parts.get(0).put("text", prompt);
+        List<Map<String, List<Map<String, String>>>> contents = List.of(new HashMap<>());
+        contents.get(0).put("parts", parts);
+        geminiMap.put("contents", contents);
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=%s".formatted(
+                        dotenv.get("GEMINI_KEY")
+                )))
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        mapper.writeValueAsString(geminiMap)))
+                .build();
+        try {
+            HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+//            answer = httpResponse.body();
+            answer = mapper.readValue(httpResponse.body(), GeminiResponse.class).candidates().get(0).content().parts().get(0).text();
+        } catch (Exception e) {
+//            throw new RuntimeException(e);
+            answer = e.getMessage();
+        }
     }
 %>
 <form>
     <section class="title">
-        프롬프트 : <%= request.getParameter("prompt") %>
+        프롬프트 : <%= prompt %>
     </section>
     <section>
         답변 : <%= answer %>
