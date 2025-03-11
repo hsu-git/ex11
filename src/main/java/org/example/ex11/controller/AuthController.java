@@ -2,12 +2,10 @@ package org.example.ex11.controller;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
 
 @WebServlet("/auth")
@@ -15,12 +13,21 @@ public class AuthController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Random rand = new Random();
+        int luckyNumber;
+        if (req.getCookies() == null ||
+                Arrays.stream(req.getCookies()).noneMatch(cookie -> cookie.getName().equals("cookie_number"))
+        ) {
+            luckyNumber = rand.nextInt(100);
+            Cookie cookie = new Cookie("cookie_number", "%d".formatted(luckyNumber));
+            resp.addCookie(cookie);
+        }
+
         HttpSession session = req.getSession();
 
         // lucky_number는 이미 세션에 저장되어 있을 수 있으므로, null 체크 후 초기화
         if (session.getAttribute("lucky_number") == null) {
-            Random rand = new Random();
-            int luckyNumber = rand.nextInt(100);
+            luckyNumber = rand.nextInt(100);
             session.setAttribute("lucky_number", luckyNumber);
         }
 
